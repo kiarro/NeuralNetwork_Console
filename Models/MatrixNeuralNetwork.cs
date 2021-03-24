@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MathNet.Numerics.LinearAlgebra;
@@ -95,7 +96,7 @@ namespace MatrixNeuralNetwok {
             return Neurons[LayerAmount - 1].AsArray();
         }
 
-        private double TrainCaseBackpropagation(double[] input, double[] idealOutput, double eduSpeed) {
+        private ValueTriple<double, Matrix<double>[], Vector<double>[]> TrainCaseBackpropagation(double[] input, double[] idealOutput, double eduSpeed) {
             double[] output = ForwardPass(input);
             // find error
             double error = 0;
@@ -104,64 +105,67 @@ namespace MatrixNeuralNetwok {
             }
             // go backward
             // count deltas
-            dNeurons[LayerAmount - 1] = (Neurons[LayerAmount - 1] - Vector<double>.Build.DenseOfArray(idealOutput)).PointwiseMultiply(Neurons[LayerAmount - 1]).PointwiseMultiply(1 - Neurons[LayerAmount - 1]);
+            Vector<double>[] dN = new Vector<double>[LayerAmount];
+            dN[LayerAmount - 1] = (Neurons[LayerAmount - 1] - Vector<double>.Build.DenseOfArray(idealOutput)).PointwiseMultiply(Neurons[LayerAmount - 1]).PointwiseMultiply(1 - Neurons[LayerAmount - 1]);
             for (int i = LayerAmount - 2; i > 0; i--) {
-                dNeurons[i] = Neurons[i].PointwiseMultiply(1 - Neurons[i]).PointwiseMultiply(Weights[i].Transpose() * dNeurons[i + 1]);
+                dN[i] = Neurons[i].PointwiseMultiply(1 - Neurons[i]).PointwiseMultiply(Weights[i].Transpose() * dN[i + 1]);
             }
             // count weight changes
+            Matrix<double>[] dW = new Matrix<double>[LayerAmount - 1];
+            Vector<double>[] dS = new Vector<double>[LayerAmount - 1];
             for (int i = 0; i < LayerAmount - 1; i++) {
-                dWeights[i] += -eduSpeed * dNeurons[i + 1].OuterProduct(Neurons[i]);
-                dShift[i] += -eduSpeed * dNeurons[i + 1] * 1;
+                dW[i] = -eduSpeed * dN[i + 1].OuterProduct(Neurons[i]);
+                dS[i] = -eduSpeed * dN[i + 1] * 1;
                 // change weights in outer function for batched training
             }
 
-            return error;
+            return new ValueTriple<double, Matrix<double>[], Vector<double>[]>(error, dW, dS);
         }
 
         public void TrainNet(CasesSet trainSet, int eraAmount = 10000, int batchSize = 1, double eduSpeed = 0.3) {
             CountElement = trainSet.Count;
             CountEra = eraAmount;
-            int caseInBatch = 0;
             double meanError = 0;
+            int counter = 0;
+            var batches = trainSet.GroupBy(x => (int)(counter++ / batchSize));
+            // List<ValueTriple<double, Matrix<double>[], Vector<double>[]>> v = new List<ValueTriple<double, Matrix<double>[], Vector<double>[]>>();
             for (era = 0; era < eraAmount; era++) {
                 meanError = 0;
                 el = 0;
-                // Parallel.ForEach(trainSet, item => {
-                //     meanError += TrainCaseBackpropagation(item.Key, item.Value, eduSpeed);
-                //     caseInBatch++;
-                //     el++;
-                //     if (caseInBatch == batchSize) {
-                //         caseInBatch = 0;
-                //         for (int i = 0; i < LayerAmount - 1; i++) {
-                //             Weights[i] = Weights[i] + dWeights[i];
-                //             Shift[i] = Shift[i] + dShift[i];
-                //             dWeights[i].Clear();
-                //             dShift[i].Clear();
-                //         }
-                //     }
-                // });
-                foreach (var item in trainSet)
-                {
-                    meanError += TrainCaseBackpropagation(item.Key, item.Value, eduSpeed);
-                    caseInBatch++; el++;
-                    if (caseInBatch == batchSize)
-                    {
-                        caseInBatch = 0;
-                        for (int i = 0; i < LayerAmount - 1; i++)
-                        {
-                            Weights[i] = Weights[i] + dWeights[i];
-                            Shift[i] = Shift[i] + dShift[i];
-                            dWeights[i].Clear();
-                            dShift[i].Clear();
+                foreach (var batch in batches) {
+                    // v.Clear();
+                    Parallel.ForEach(batch, item => {
+                        // v.Add(TrainCaseBackpropagation(item.Key, item.Value, eduSpeed));
+                        ValueTriple<double, Matrix<double>[], Vector<double>[]> r = TrainCaseBackpropagation(item.Key, item.Value, eduSpeed);
+                        meanError += r.Value1;
+                        for (int i = 0; i < LayerAmount - 1; i++) {
+                            dWeights[i] += r.Value2[i];
+                            dShift[i] += r.Value3[i];
                         }
+                        el++;
+                    });
+                    // foreach (var item in v) {
+                    //     meanError += item.Value1;
+                    //     for (int i = 0; i < LayerAmount - 1; i++) {
+                    //         dWeights[i] += item.Value2[i];
+                    //         dShift[i] += item.Value3[i];
+                    //     }
+                    // }
+                    // foreach(var item in batch){
+                    //     ValueTriple<double, Matrix<double>[], Vector<double>[]> v = TrainCaseBackpropagation(item.Key, item.Value, eduSpeed);
+                    //     meanError += v.Value1;
+                    //     for (int i = 0; i < LayerAmount - 1; i++) {
+                    //         dWeights[i] += v.Value2[i];
+                    //         dShift[i] += v.Value3[i];
+                    //     }
+                    //     el++;
+                    // }
+                    for (int i = 0; i < LayerAmount - 1; i++) {
+                        Weights[i] = Weights[i] + dWeights[i];
+                        Shift[i] = Shift[i] + dShift[i];
+                        dWeights[i].Clear();
+                        dShift[i].Clear();
                     }
-                }
-                caseInBatch = 0;
-                for (int i = 0; i < LayerAmount - 1; i++) {
-                    Weights[i] = Weights[i] + dWeights[i];
-                    Shift[i] = Shift[i] + dShift[i];
-                    dWeights[i].Clear();
-                    dShift[i].Clear();
                 }
             }
         }
@@ -179,6 +183,17 @@ namespace MatrixNeuralNetwok {
             }
             errorMean /= testSet.Count;
             return errorMean;
+        }
+
+        struct ValueTriple<T, G, H> {
+            public T Value1 { get; set; }
+            public G Value2 { get; set; }
+            public H Value3 { get; set; }
+            public ValueTriple(T v1, G v2, H v3) {
+                Value1 = v1;
+                Value2 = v2;
+                Value3 = v3;
+            }
         }
 
     }

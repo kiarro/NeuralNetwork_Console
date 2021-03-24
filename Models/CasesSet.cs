@@ -9,7 +9,7 @@ namespace MatrixNeuralNetwok
 {
     public class CasesSet : IEnumerable<KeyValuePair<double[], double[]>>
     {
-        Dictionary<double[], double[]> cases;
+        public Dictionary<double[], double[]> cases {get;}
         public int Count { get => cases.Count; }
         public CasesSet()
         {
