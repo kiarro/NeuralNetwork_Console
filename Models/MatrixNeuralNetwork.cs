@@ -10,8 +10,8 @@ namespace MatrixNeuralNetwok {
         public string Structure {
             get {
                 StringBuilder str = new StringBuilder("{");
-                foreach (Vector<double> layer in Neurons) {
-                    str.AppendFormat("{0},", layer.Count);
+                foreach (int layerc in NetStr) {
+                    str.AppendFormat("{0},", layerc);
                 }
                 str.Remove(str.Length - 1, 1);
                 str.Append("}\n");
@@ -19,7 +19,8 @@ namespace MatrixNeuralNetwok {
             }
         }
         public int LayerAmount { get; private set; }
-        public Vector<double>[] Neurons { get; }
+        private int[] NetStr {get; set; }
+        // public Vector<double>[] Neurons { get; }
         private Vector<double>[] dNeurons { get; set; }
         public Matrix<double>[] Weights { get; set; }
         private Matrix<double>[] dWeights { get; set; }
@@ -34,15 +35,16 @@ namespace MatrixNeuralNetwok {
         public int CountElement { get; private set; }
 
         public MatrixNN(int[] NNstructure) {
+            NetStr = NNstructure;
             LayerAmount = NNstructure.Length;
-            Neurons = new Vector<double>[LayerAmount];
+            // Neurons = new Vector<double>[LayerAmount];
             dNeurons = new Vector<double>[LayerAmount];
             Shift = new Vector<double>[LayerAmount];
             dShift = new Vector<double>[LayerAmount];
             Weights = new Matrix<double>[LayerAmount - 1];
             dWeights = new Matrix<double>[LayerAmount - 1];
             for (int i = 0; i < LayerAmount - 1; i++) {
-                Neurons[i] = Vector<double>.Build.Dense(NNstructure[i], 0);
+                // Neurons[i] = Vector<double>.Build.Dense(NNstructure[i], 0);
                 dNeurons[i] = Vector<double>.Build.Dense(NNstructure[i], 0);
                 Weights[i] = Matrix<double>.Build.Random(NNstructure[i + 1], NNstructure[i]);
                 // Weights[i] = Matrix<double>.Build.Dense(NNstructure[i+1], NNstructure[i], 0.1);
@@ -50,12 +52,12 @@ namespace MatrixNeuralNetwok {
                 Shift[i] = Vector<double>.Build.Random(NNstructure[i + 1], NNstructure[i]);
                 dShift[i] = Vector<double>.Build.Dense(NNstructure[i + 1], 0);
             }
-            Neurons[LayerAmount - 1] = Vector<double>.Build.Dense(NNstructure[LayerAmount - 1], 0);
+            // Neurons[LayerAmount - 1] = Vector<double>.Build.Dense(NNstructure[LayerAmount - 1], 0);
         }
 
         public MatrixNN(int[] NNstructure, double? value) {
             LayerAmount = NNstructure.Length;
-            Neurons = new Vector<double>[LayerAmount];
+            // Neurons = new Vector<double>[LayerAmount];
             dNeurons = new Vector<double>[LayerAmount];
             Shift = new Vector<double>[LayerAmount];
             dShift = new Vector<double>[LayerAmount];
@@ -63,19 +65,18 @@ namespace MatrixNeuralNetwok {
             dWeights = new Matrix<double>[LayerAmount - 1];
 
             for (int i = 0; i < LayerAmount - 1; i++) {
-                Neurons[i] = Vector<double>.Build.Dense(NNstructure[i], 0);
+                // Neurons[i] = Vector<double>.Build.Dense(NNstructure[i], 0);
                 dNeurons[i] = Vector<double>.Build.Dense(NNstructure[i], 0);
                 dWeights[i] = Matrix<double>.Build.Dense(NNstructure[i + 1], NNstructure[i], 0);
                 dShift[i] = Vector<double>.Build.Dense(NNstructure[i + 1], 0);
             }
-            Neurons[LayerAmount - 1] = Vector<double>.Build.Dense(NNstructure[LayerAmount - 1], 0);
+            // Neurons[LayerAmount - 1] = Vector<double>.Build.Dense(NNstructure[LayerAmount - 1], 0);
 
             if (value is not null) {
                 for (int i = 0; i < LayerAmount - 1; i++) {
                     Weights[i] = Matrix<double>.Build.Dense(NNstructure[i + 1], NNstructure[i], (double)value);
                     Shift[i] = Vector<double>.Build.Dense(NNstructure[i + 1], (double)value);
                 }
-                Neurons[LayerAmount - 1] = Vector<double>.Build.Dense(NNstructure[LayerAmount - 1], 0);
             }
         }
 
@@ -88,16 +89,18 @@ namespace MatrixNeuralNetwok {
             // return 1;
         }
 
-        private double[] ForwardPass(double[] inputs) {
+        private Vector<double>[] ForwardPass(double[] inputs) {
+            Vector<double>[] Neurons = new Vector<double>[LayerAmount];
             Neurons[0] = Vector<double>.Build.DenseOfArray(inputs);
             for (int i = 1; i < LayerAmount; i++) {
                 Neurons[i] = (Weights[i - 1] * Neurons[i - 1] + Shift[i - 1]).Map(ActivationFunction);
             }
-            return Neurons[LayerAmount - 1].AsArray();
+            return Neurons;
         }
 
         private ValueTriple<double, Matrix<double>[], Vector<double>[]> TrainCaseBackpropagation(double[] input, double[] idealOutput, double eduSpeed) {
-            double[] output = ForwardPass(input);
+            Vector<double>[] Neurons = ForwardPass(input);
+            double[] output = Neurons[LayerAmount-1].AsArray();
             // find error
             double error = 0;
             for (int i = 0; i < output.Length; i++) {
@@ -128,38 +131,19 @@ namespace MatrixNeuralNetwok {
             double meanError = 0;
             int counter = 0;
             var batches = trainSet.GroupBy(x => (int)(counter++ / batchSize));
-            // List<ValueTriple<double, Matrix<double>[], Vector<double>[]>> v = new List<ValueTriple<double, Matrix<double>[], Vector<double>[]>>();
             for (era = 0; era < eraAmount; era++) {
                 meanError = 0;
                 el = 0;
                 foreach (var batch in batches) {
-                    // v.Clear();
-                    Parallel.ForEach(batch, item => {
-                        // v.Add(TrainCaseBackpropagation(item.Key, item.Value, eduSpeed));
-                        ValueTriple<double, Matrix<double>[], Vector<double>[]> r = TrainCaseBackpropagation(item.Key, item.Value, eduSpeed);
-                        meanError += r.Value1;
+                    foreach(var item in batch){
+                        ValueTriple<double, Matrix<double>[], Vector<double>[]> v = TrainCaseBackpropagation(item.Key, item.Value, eduSpeed);
+                        meanError += v.Value1;
                         for (int i = 0; i < LayerAmount - 1; i++) {
-                            dWeights[i] += r.Value2[i];
-                            dShift[i] += r.Value3[i];
+                            dWeights[i] += v.Value2[i];
+                            dShift[i] += v.Value3[i];
                         }
                         el++;
-                    });
-                    // foreach (var item in v) {
-                    //     meanError += item.Value1;
-                    //     for (int i = 0; i < LayerAmount - 1; i++) {
-                    //         dWeights[i] += item.Value2[i];
-                    //         dShift[i] += item.Value3[i];
-                    //     }
-                    // }
-                    // foreach(var item in batch){
-                    //     ValueTriple<double, Matrix<double>[], Vector<double>[]> v = TrainCaseBackpropagation(item.Key, item.Value, eduSpeed);
-                    //     meanError += v.Value1;
-                    //     for (int i = 0; i < LayerAmount - 1; i++) {
-                    //         dWeights[i] += v.Value2[i];
-                    //         dShift[i] += v.Value3[i];
-                    //     }
-                    //     el++;
-                    // }
+                    }
                     for (int i = 0; i < LayerAmount - 1; i++) {
                         Weights[i] = Weights[i] + dWeights[i];
                         Shift[i] = Shift[i] + dShift[i];
@@ -175,7 +159,7 @@ namespace MatrixNeuralNetwok {
             double errorMean = 0;
             double[] output;
             foreach (var item in testSet) {
-                output = ForwardPass(item.Key);
+                output = ForwardPass(item.Key)[LayerAmount-1].ToArray();
                 for (int i = 0; i < output.Length; i++) {
                     error += (output[i] - item.Value[i]) * (output[i] - item.Value[i]);
                 }
