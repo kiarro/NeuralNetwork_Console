@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -20,6 +21,7 @@ namespace NeuralNetwork_Console.Interface {
             Console.WriteLine("Process started");
             int result = 1;
             while (result > -1) {
+                Console.Write(">> ");
                 Task<string> w = Task.Run(() => Console.ReadLine());
                 w.Wait();
                 string command = w.Result;
@@ -35,6 +37,10 @@ namespace NeuralNetwork_Console.Interface {
                 switch (parts[0]) {
                 case "exit":
                     return -1;
+                case "exec":
+                    ExecuteFile(parts[1]);
+                    Console.WriteLine("File executed");
+                    break;
                 case "net":
                     switch (parts[1]) {
                     case "new":
@@ -119,15 +125,32 @@ namespace NeuralNetwork_Console.Interface {
                     break;
                 }
             } catch (Exception e) {
-                Console.WriteLine("Some error");
+                Console.WriteLine("Some error in: \"{0}\"", command);
             }
             return 0;
         }
 
+        private void ExecuteFile(string path) 
+        {
+            FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+            StreamReader sr = new StreamReader(fs);
+            string? line;
+            
+            while (!sr.EndOfStream)
+            {
+                line = sr.ReadLine();
+                Console.WriteLine("> "+line);
+                ProcessCommand(line);
+            }
+
+            sr.Close();
+            fs.Close();
+        }
+
         private static void callbackWriteConsole(object tt) {
-            Console.SetCursorPosition(0, Console.CursorTop-1);
+            Console.SetCursorPosition(0, Console.CursorTop - 1);
             Console.WriteLine("");
-            Console.SetCursorPosition(0, Console.CursorTop-1);
+            Console.SetCursorPosition(0, Console.CursorTop - 1);
             Console.WriteLine("Era {0} / {1} - Element {2} / {3}", ((TrainTask)tt).Era, ((TrainTask)tt).EraCount, ((TrainTask)tt).Element, ((TrainTask)tt).ElementCount);
         }
     }
