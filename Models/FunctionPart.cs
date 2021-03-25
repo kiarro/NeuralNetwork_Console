@@ -8,6 +8,7 @@ namespace MatrixNeuralNetwok.Function {
         private static double realMinValue = -1;
         private static double realMaxValue = 1;
         private static double netMinValue = 0;
+        // private static double netMinValue = -1;
         private static double netMaxValue = 1;
 
         /// <summary>
@@ -18,6 +19,7 @@ namespace MatrixNeuralNetwok.Function {
         /// <returns>function value at (x,y) point</returns>
         public static double MyFunc(double x, double y) {
             return Math.Sin(x + y) * Math.Cos(3 * x);
+            // return Math.Sin(x)+Math.Sin(y);
         }
 
         public static CasesSet PrepareCasesRandom(int num, double minX, double maxX, double minY, double maxY) {

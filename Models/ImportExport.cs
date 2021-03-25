@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -19,9 +20,9 @@ namespace MatrixNeuralNetwok.FileStorage
             for (int i = 0; i < network.LayerAmount-1; i++)
             {
                 exportString.AppendFormat("w{0}\n", i + 1);
-                exportString.Append(network.Weights[i].ToMatrixString(network.Weights[i].RowCount, network.Weights[i].ColumnCount));
+                exportString.Append(network.Weights[i].ToMatrixString(network.Weights[i].RowCount, network.Weights[i].ColumnCount, "N10"));
                 exportString.AppendFormat("s{0}\n", i + 1);
-                exportString.Append(network.Shift[i].ToVectorString(network.Shift[i].Count, 16));
+                exportString.Append(network.Shift[i].ToVectorString(network.Shift[i].Count, 16, "N10"));
             }
 
             FileStream fs = new FileStream(path, FileMode.Create, FileAccess.Write);
@@ -54,9 +55,9 @@ namespace MatrixNeuralNetwok.FileStorage
                 for (int j = 0; j < str[i + 1]; j++)
                 {
                     line = sr.ReadLine();
-                    w[j] = Regex.Matches(line, @"\s*([\d\,-]+)")
+                    w[j] = Regex.Matches(line, @"\s*([\d\,\.-]+)")
                         .Cast<Match>()
-                        .Select(s => Double.Parse(s.Value))
+                        .Select(s => Double.Parse(s.Value, CultureInfo.InvariantCulture))
                         .ToArray();
                 }
                 network.Weights[i] = Matrix<double>.Build.DenseOfRowArrays(w);
@@ -66,7 +67,7 @@ namespace MatrixNeuralNetwok.FileStorage
                 for (int j = 0; j < str[i + 1]; j++)
                 {
                     line = sr.ReadLine();
-                    s[j] = Double.Parse(line);
+                    s[j] = Double.Parse(line, CultureInfo.InvariantCulture);
                 }
                 network.Shift[i] = Vector<double>.Build.DenseOfArray(s);
             }
@@ -109,12 +110,12 @@ namespace MatrixNeuralNetwok.FileStorage
                 // read line of case
                 line = sr.ReadLine();
                 double[] key; double[] value;
-                Match m = Regex.Match(line, @"{((?:[\d\,\-]+\s?)+)} => {((?:[\d\,\-]+\s?)+)}");
+                Match m = Regex.Match(line, @"{((?:[\d\,\.\-]+\s?)+)} => {((?:[\d\,\.\-]+\s?)+)}");
                 key = m.Groups[1].Value.Split(' ')
-                    .Select(s => Double.Parse(s))
+                    .Select(s => Double.Parse(s, CultureInfo.InvariantCulture))
                     .ToArray();
                 value = m.Groups[2].Value.Split(' ')
-                    .Select(s => Double.Parse(s))
+                    .Select(s => Double.Parse(s, CultureInfo.InvariantCulture))
                     .ToArray();
                 set.Add(key, value);
             }
@@ -132,7 +133,7 @@ namespace MatrixNeuralNetwok.FileStorage
             StringBuilder res = new StringBuilder("{");
             foreach (double v in arr)
             {
-                res.Append(v);
+                res.Append(v.ToString("N10"));
                 res.Append(" ");
             }
             res.Remove(res.Length - 1, 1);

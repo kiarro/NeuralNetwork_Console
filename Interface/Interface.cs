@@ -1,20 +1,29 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using NeuralNetwork_Console.Models;
+using NLog;
 
 namespace NeuralNetwork_Console.Interface {
     public class MainInterface {
         private MathModel _model;
 
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
+
         public MainInterface() {
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            Logger.Info("Start");
             _model = new MathModel();
             MainLoop();
             Console.WriteLine("Interface exit");
+            Logger.Info("Exit");
+
         }
 
         private void MainLoop() {
@@ -25,6 +34,7 @@ namespace NeuralNetwork_Console.Interface {
                 Task<string> w = Task.Run(() => Console.ReadLine());
                 w.Wait();
                 string command = w.Result;
+                Logger.Info(">> {0}", command);
                 command = command.ToLower();
                 result = ProcessCommand(command);
             }
@@ -40,6 +50,7 @@ namespace NeuralNetwork_Console.Interface {
                 case "exec":
                     ExecuteFile(parts[1]);
                     Console.WriteLine("File executed");
+                    Logger.Info("File executed");
                     break;
                 case "net":
                     switch (parts[1]) {
@@ -61,6 +72,9 @@ namespace NeuralNetwork_Console.Interface {
                     case "export":
                         _model.ExportNet(parts[2], parts[3]);
                         break;
+                    case "copy":
+                        _model.CopyNet(parts[2], parts[3]);
+                        break;
                     }
                     break;
                 case "case":
@@ -68,10 +82,10 @@ namespace NeuralNetwork_Console.Interface {
                     case "new":
                         switch (parts[2]) {
                         case "uniform":
-                            _model.CreateNewCasesSetUniform(parts[3], Int32.Parse(parts[4]), Double.Parse(parts[5]), Double.Parse(parts[6]), Int32.Parse(parts[7]), Double.Parse(parts[8]), Double.Parse(parts[9]));
+                            _model.CreateNewCasesSetUniform(parts[3], Int32.Parse(parts[4]), Double.Parse(parts[5], CultureInfo.InvariantCulture), Double.Parse(parts[6], CultureInfo.InvariantCulture), Int32.Parse(parts[7]), Double.Parse(parts[8]), Double.Parse(parts[9], CultureInfo.InvariantCulture));
                             break;
                         case "random":
-                            _model.CreateNewCasesSetRandom(parts[3], Int32.Parse(parts[4]), Double.Parse(parts[5]), Double.Parse(parts[6]), Double.Parse(parts[7]), Double.Parse(parts[8]));
+                            _model.CreateNewCasesSetRandom(parts[3], Int32.Parse(parts[4]), Double.Parse(parts[5], CultureInfo.InvariantCulture), Double.Parse(parts[6], CultureInfo.InvariantCulture), Double.Parse(parts[7], CultureInfo.InvariantCulture), Double.Parse(parts[8], CultureInfo.InvariantCulture));
                             break;
                         }
                         break;
@@ -100,46 +114,99 @@ namespace NeuralNetwork_Console.Interface {
                         TrainTask _tt = _model.TrainNet(parts[1], parts[2]);
                         Timer timer = new Timer(callbackWriteConsole, _tt, 1, 2000);
                         _tt.CurrentTask.Wait();
-                        watch.Stop();
                         timer.Change(-1, -1);
+                        watch.Stop();
                         timer.Dispose();
                         Console.WriteLine("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
+                        Logger.Info("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
+                        return 0;
+                    }
+                    if (parts.Length == 4) {
+                        var watch = System.Diagnostics.Stopwatch.StartNew();
+                        // net, case
+                        TrainTask _tt = _model.TrainNet(parts[1], parts[2], resNetName : parts[3]);
+                        Timer timer = new Timer(callbackWriteConsole, _tt, 1000, 2000);
+                        _tt.CurrentTask.Wait();
+                        timer.Change(-1, -1);
+                        watch.Stop();
+                        timer.Dispose();
+                        Console.WriteLine("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
+                        Logger.Info("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
                         return 0;
                     }
                     if (parts.Length == 6) {
                         var watch = System.Diagnostics.Stopwatch.StartNew();
                         // net, case, edu, batch, speed
-                        TrainTask _tt = _model.TrainNet(parts[1], parts[2], Int32.Parse(parts[3]), Int32.Parse(parts[4]), Double.Parse(parts[5]));
+                        TrainTask _tt = _model.TrainNet(parts[1], parts[2], Int32.Parse(parts[3]), Int32.Parse(parts[4]), Double.Parse(parts[5], CultureInfo.InvariantCulture));
                         Timer timer = new Timer(callbackWriteConsole, _tt, 1000, 2000);
                         _tt.CurrentTask.Wait();
-                        watch.Stop();
                         timer.Change(-1, -1);
+                        watch.Stop();
                         timer.Dispose();
                         Console.WriteLine("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
+                        Logger.Info("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
                         return 0;
                     }
+                    if (parts.Length == 7) {
+                        var watch = System.Diagnostics.Stopwatch.StartNew();
+                        // net, case, edu, batch, speed
+                        TrainTask _tt = _model.TrainNet(parts[1], parts[2], Int32.Parse(parts[4]), Int32.Parse(parts[5]), Double.Parse(parts[6], CultureInfo.InvariantCulture), resNetName : parts[3]);
+                        Timer timer = new Timer(callbackWriteConsole, _tt, 1000, 2000);
+                        _tt.CurrentTask.Wait();
+                        timer.Change(-1, -1);
+                        watch.Stop();
+                        timer.Dispose();
+                        Console.WriteLine("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
+                        Logger.Info("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
+                        return 0;
+                    }
+                    break;
+                case "eval":
+                    Match m = Regex.Match(command, @"{((?:[\d\,\.\-]+\s?)+)}");
+                    double[] input1 = m.Groups[1].Value.Split(' ')
+                        .Select(s => Double.Parse(s, CultureInfo.InvariantCulture))
+                        .ToArray();
+                    double[] out1 = _model.EvalValue(parts[1], input1);
+                    Console.WriteLine("Evaluated. Result : {0}", out1.ToStr());
+                    Logger.Info("Evaluated. Result : {0}", out1.ToStr());
+                    break;
+                case "testcase":
+                    Match m1 = Regex.Match(command, @"{((?:[\d\,\.\-]+\s?)+)} => {((?:[\d\,\.\-]+\s?)+)}");
+                    double[] input = m1.Groups[1].Value.Split(' ')
+                        .Select(s => Double.Parse(s, CultureInfo.InvariantCulture))
+                        .ToArray();
+                    double[] output = m1.Groups[2].Value.Split(' ')
+                        .Select(s => Double.Parse(s, CultureInfo.InvariantCulture))
+                        .ToArray();
+                    double err1 = _model.TestNet(parts[1], input, output);
+                    Console.WriteLine("Tested. Error : {0}", err1);
+                    Logger.Info("Tested. Error : {0}", err1);
                     break;
                 case "test":
                     double err = _model.TestNet(parts[1], parts[2]);
                     Console.WriteLine("Tested. Error : {0}", err);
+                    Logger.Info("Tested. Error : {0}", err);
                     break;
                 }
+            } catch (FileNotFoundException e) {
+                Console.WriteLine("File not found: \"{0}\"", command);
+                Logger.Error(e, "File not found");
             } catch (Exception e) {
                 Console.WriteLine("Some error in: \"{0}\"", command);
+                Logger.Error(e, "Some error");
             }
             return 0;
         }
 
-        private void ExecuteFile(string path) 
-        {
+        private void ExecuteFile(string path) {
             FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
             StreamReader sr = new StreamReader(fs);
             string? line;
-            
-            while (!sr.EndOfStream)
-            {
+
+            while (!sr.EndOfStream) {
                 line = sr.ReadLine();
-                Console.WriteLine("> "+line);
+                Console.WriteLine("> " + line);
+                Logger.Info("> {0}", line);
                 ProcessCommand(line);
             }
 
@@ -153,6 +220,23 @@ namespace NeuralNetwork_Console.Interface {
             Console.SetCursorPosition(0, Console.CursorTop - 1);
             Console.WriteLine("Era {0} / {1} - Element {2} / {3}", ((TrainTask)tt).Era, ((TrainTask)tt).EraCount, ((TrainTask)tt).Element, ((TrainTask)tt).ElementCount);
         }
+    }
+
+    public static class Ext
+    {
+        public static string ToStr(this double[] arr)
+        {
+            StringBuilder res = new StringBuilder("{");
+            foreach (double v in arr)
+            {
+                res.Append(v);
+                res.Append(" ");
+            }
+            res.Remove(res.Length - 1, 1);
+            res.Append("}");
+            return res.ToString();
+        }
+
     }
 
 }

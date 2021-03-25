@@ -19,7 +19,7 @@ namespace MatrixNeuralNetwok {
             }
         }
         public int LayerAmount { get; private set; }
-        private int[] NetStr {get; set; }
+        public int[] NetStr { get; private set; }
         // public Vector<double>[] Neurons { get; }
         private Vector<double>[] dNeurons { get; set; }
         public Matrix<double>[] Weights { get; set; }
@@ -82,10 +82,12 @@ namespace MatrixNeuralNetwok {
 
         private double ActivationFunction(double value) {
             return 1 / (1 + Math.Exp(-value));
+            // return Math.Sin(value);
             // return value;
         }
         private double ActFuncDiff(double power) {
             return power * (1 - power);
+            // return Math.Sqrt(1-power*power);
             // return 1;
         }
 
@@ -98,9 +100,13 @@ namespace MatrixNeuralNetwok {
             return Neurons;
         }
 
+        public double[] EvalValue(double[] inputs) {
+            return ForwardPass(inputs)[LayerAmount - 1].AsArray();
+        }
+
         private ValueTriple<double, Matrix<double>[], Vector<double>[]> TrainCaseBackpropagation(double[] input, double[] idealOutput, double eduSpeed) {
             Vector<double>[] Neurons = ForwardPass(input);
-            double[] output = Neurons[LayerAmount-1].AsArray();
+            double[] output = Neurons[LayerAmount - 1].AsArray();
             // find error
             double error = 0;
             for (int i = 0; i < output.Length; i++) {
@@ -135,7 +141,7 @@ namespace MatrixNeuralNetwok {
                 meanError = 0;
                 el = 0;
                 foreach (var batch in batches) {
-                    foreach(var item in batch){
+                    foreach (var item in batch) {
                         ValueTriple<double, Matrix<double>[], Vector<double>[]> v = TrainCaseBackpropagation(item.Key, item.Value, eduSpeed);
                         meanError += v.Value1;
                         for (int i = 0; i < LayerAmount - 1; i++) {
@@ -159,7 +165,7 @@ namespace MatrixNeuralNetwok {
             double errorMean = 0;
             double[] output;
             foreach (var item in testSet) {
-                output = ForwardPass(item.Key)[LayerAmount-1].ToArray();
+                output = ForwardPass(item.Key)[LayerAmount - 1].ToArray();
                 for (int i = 0; i < output.Length; i++) {
                     error += (output[i] - item.Value[i]) * (output[i] - item.Value[i]);
                 }
@@ -167,6 +173,15 @@ namespace MatrixNeuralNetwok {
             }
             errorMean /= testSet.Count;
             return errorMean;
+        }
+
+        public double TestNet(double[] input, double[] output) {
+            double error = 0;
+            double[] out1 = ForwardPass(input)[LayerAmount - 1].AsArray();
+            for (int i = 0; i < output.Length; i++) {
+                error += (out1[i] - output[i]) * (out1[i] - output[i]);
+            }
+            return error;
         }
 
         struct ValueTriple<T, G, H> {
@@ -178,6 +193,15 @@ namespace MatrixNeuralNetwok {
                 Value2 = v2;
                 Value3 = v3;
             }
+        }
+
+        public MatrixNN Copy() {
+            MatrixNN res = new MatrixNN(NetStr);
+            for (int i = 0; i < LayerAmount - 1; i++) {
+                res.Weights[i] = Weights[i];
+                res.Shift[i] = Shift[i];
+            }
+            return res;
         }
 
     }
