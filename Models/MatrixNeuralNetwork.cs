@@ -131,19 +131,19 @@ namespace MatrixNeuralNetwok {
             return new ValueTriple<double, Matrix<double>[], Vector<double>[]>(error, dW, dS);
         }
 
-        public void TrainNet(CasesSet trainSet, int eraAmount = 10000, int batchSize = 1, double eduSpeed = 0.3) {
+        public double[] TrainNet(CasesSet trainSet, int eraAmount = 10000, int batchSize = 1, double eduSpeed = 0.3) {
             CountElement = trainSet.Count;
             CountEra = eraAmount;
-            double meanError = 0;
+            double[] meanError = new double[eraAmount];
             int counter = 0;
             var batches = trainSet.GroupBy(x => (int)(counter++ / batchSize));
             for (era = 0; era < eraAmount; era++) {
-                meanError = 0;
+                meanError[era] = 0;
                 el = 0;
                 foreach (var batch in batches) {
                     foreach (var item in batch) {
                         ValueTriple<double, Matrix<double>[], Vector<double>[]> v = TrainCaseBackpropagation(item.Key, item.Value, eduSpeed);
-                        meanError += v.Value1;
+                        meanError[era] += v.Value1;
                         for (int i = 0; i < LayerAmount - 1; i++) {
                             dWeights[i] += v.Value2[i];
                             dShift[i] += v.Value3[i];
@@ -157,7 +157,9 @@ namespace MatrixNeuralNetwok {
                         dShift[i].Clear();
                     }
                 }
+                meanError[era] /= CountElement;
             }
+            return meanError;
         }
 
         public double TestNet(CasesSet testSet) {
@@ -166,6 +168,7 @@ namespace MatrixNeuralNetwok {
             double[] output;
             foreach (var item in testSet) {
                 output = ForwardPass(item.Key)[LayerAmount - 1].ToArray();
+                error = 0;
                 for (int i = 0; i < output.Length; i++) {
                     error += (output[i] - item.Value[i]) * (output[i] - item.Value[i]);
                 }

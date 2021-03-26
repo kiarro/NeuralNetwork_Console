@@ -124,6 +124,22 @@ namespace MatrixNeuralNetwok.FileStorage
             fs.Close();
             return set;
         }
+
+        public static void PrintEpochsError(double[] values, string filename)
+        {
+            FileStream fs = new FileStream(filename, FileMode.Create, FileAccess.Write);
+            StreamWriter sw = new StreamWriter(fs);
+            
+            sw.WriteLine("{0,10}\t{1,10}", "Epoch", "Error");
+            for (int i=0; i<values.Length; i++){
+                sw.WriteLine("{0,10}\t{1,10:N10}", i+1, values[i]);
+            }
+            
+            sw.Flush();
+            sw.Close();
+            fs.Close();
+            
+        }
     }
 
     public static class Ext
