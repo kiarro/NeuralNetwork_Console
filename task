@@ -1,6 +1,0 @@
-net new n2 {2,5,5,1}
-case import c1 uni100
-train n2 c1 2000 1000 0,3
-net export nny
-net export n2 __net
-test n2 c1

@@ -112,7 +112,8 @@ namespace NeuralNetwork_Console.Interface {
                         var watch = System.Diagnostics.Stopwatch.StartNew();
                         // net, case
                         TrainTask _tt = _model.TrainNet(parts[1], parts[2]);
-                        Timer timer = new Timer(callbackWriteConsole, _tt, 1, 2000);
+                        Timer timer = new Timer(callbackWriteConsole, _tt, 0, 2000);
+                        Task.Delay(20);
                         _tt.CurrentTask.Wait();
                         timer.Change(-1, -1);
                         watch.Stop();
