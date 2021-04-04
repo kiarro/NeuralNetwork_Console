@@ -137,6 +137,24 @@ namespace NeuralNetwork_Console.Models {
             }
             return net.TestNet(cases);
         }
+        public void GraphNet(string netN, string casesN, string path){
+            MatrixNN net;
+            bool exN = Networks.TryGetValue(netN, out net);
+            CasesSet cases;
+            bool exC = CasesSets.TryGetValue(casesN, out cases);
+            if (!exN) {
+                Console.WriteLine("Network with that name does not exists.");
+                Logger.Warn("Network with that name does not exists.");
+                return;
+            }
+            if (!exC) {
+                Console.WriteLine("Cases set with that name does not exists.");
+                Logger.Warn("Cases set with that name does not exists.");
+                return;
+            }
+            CasesSet res = net.GraphNet(cases);
+            ImportExport.ExportCasesSet(res, path);
+        }
         public void CreateNewCasesSetUniform(string name, int numX, double minX, double maxX, int numY, double minY, double maxY) {
             if (CasesSets.ContainsKey(name)) {
                 Console.WriteLine("Cases set with that name already exists.");

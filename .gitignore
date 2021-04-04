@@ -8,6 +8,11 @@ tasks
 free_net
 case
 case_rand
+rand_net
+uni_net
+nets
+graph
+lownet
 
 # User-specific files
 *.rsuser
@@ -15,6 +20,9 @@ case_rand
 *.user
 *.userosscache
 *.sln.docstates
+
+*.EpochStats
+
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

@@ -186,6 +186,24 @@ namespace MatrixNeuralNetwok {
             }
             return error;
         }
+        public CasesSet GraphNet(CasesSet input){
+            CasesSet result = new CasesSet();
+            double[] output;
+            foreach (var item in input) {
+                output = ForwardPass(item.Key)[LayerAmount - 1].ToArray();
+                result.Add(item.Key, output);                
+            }
+            return result;
+        }
+        public CasesSet GraphNet(List<double[]> input){
+            CasesSet result = new CasesSet();
+            double[] output;
+            foreach (var item in input) {
+                output = ForwardPass(item)[LayerAmount - 1].ToArray();
+                result.Add(item, output);                
+            }
+            return result;
+        }
 
         struct ValueTriple<T, G, H> {
             public T Value1 { get; set; }

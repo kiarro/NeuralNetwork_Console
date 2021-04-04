@@ -137,7 +137,7 @@ namespace NeuralNetwork_Console.Interface {
                     }
                     if (parts.Length == 6) {
                         var watch = System.Diagnostics.Stopwatch.StartNew();
-                        // net, case, edu, batch, speed
+                        // net, case, epochs, batch, speed
                         TrainTask _tt = _model.TrainNet(parts[1], parts[2], Int32.Parse(parts[3]), Int32.Parse(parts[4]), Double.Parse(parts[5], CultureInfo.InvariantCulture));
                         Timer timer = new Timer(callbackWriteConsole, _tt, 1000, 2000);
                         _tt.CurrentTask.Wait();
@@ -188,6 +188,9 @@ namespace NeuralNetwork_Console.Interface {
                     Console.WriteLine("Tested. Error : {0}", err);
                     Logger.Info("Tested. Error : {0}", err);
                     break;
+                case "graphnet":
+                    _model.GraphNet(parts[1], parts[2], parts[3]);
+                break;
                 }
             } catch (FileNotFoundException e) {
                 Console.WriteLine("File not found: \"{0}\"", command);
