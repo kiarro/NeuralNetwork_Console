@@ -83,7 +83,7 @@ namespace NeuralNetwork_Console.Models {
             }
             return new TrainTask(Task.Run(() => {
                 double[] err = net.TrainNet(cases, era, batchSize, eduSpeed);
-                ImportExport.PrintEpochsError(err, String.Format("{0}.EpochStats", netN));
+                // ImportExport.PrintEpochsError(err, String.Format("{0}.EpochStats", netN));
             }), net);
         }
         public double[] EvalValue(string netN, double[] input)

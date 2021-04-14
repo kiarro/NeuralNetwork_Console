@@ -9,8 +9,8 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 
 # filename = "H:\\Programs\\Neural Networks\\NeuralNetwork_Console\\graph\\rn100"
-filename = "H:\\Programs\\Neural Networks\\NeuralNetwork_Console\\case\\case26"
-
+filename = "graphs\\n10_10_10_c101_g101"
+n = 101
 
 f = open(filename, "r")
 line = f.readline()
@@ -30,9 +30,9 @@ for i in range(num):
     # value = list(map(float, match.group(2).split(' ')))
     Z.append(float(match.group(2).split(' ')[0]))
 
-X = np.array(X).reshape((26,26))
-Y = np.array(Y).reshape((26,26))
-Z = np.array(Z).reshape((26,26))
+X = np.array(X).reshape((n,n))
+Y = np.array(Y).reshape((n,n))
+Z = np.array(Z).reshape((n,n))
 
 fig1 = plt.figure(1)
 ax1 = fig1.add_subplot(111, projection='3d')

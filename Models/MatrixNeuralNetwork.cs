@@ -27,6 +27,8 @@ namespace MatrixNeuralNetwok {
         public Vector<double>[] Shift { get; set; }
         private Vector<double>[] dShift { get; set; }
 
+        public double[] errs {get; private set; }
+
         public int CurrentEra { get => era; }
         private int era;
         public int CurrentElement { get => el; }
@@ -159,6 +161,7 @@ namespace MatrixNeuralNetwok {
                 }
                 meanError[era] /= CountElement;
             }
+            this.errs = meanError;
             return meanError;
         }
 

@@ -43,7 +43,8 @@ namespace NeuralNetwork_Console.Interface {
 
         private int ProcessCommand(string command) {
             try {
-                string[] parts = command.Split(' ');
+                // string[] parts = command.Split(' ');
+                string[] parts = Regex.Matches(command, @"(\S+)").Select(e => e.Groups[1].Value).ToArray();
                 switch (parts[0]) {
                 case "exit":
                     return -1;

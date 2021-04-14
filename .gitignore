@@ -13,6 +13,12 @@ uni_net
 nets
 graph
 lownet
+uni_nets
+rand_nets
+nets
+tk
+graphs
+case3
 
 # User-specific files
 *.rsuser

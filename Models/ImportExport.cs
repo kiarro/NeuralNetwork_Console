@@ -31,6 +31,8 @@ namespace MatrixNeuralNetwok.FileStorage
             sw.Flush();
             sw.Close();
             fs.Close();
+
+            PrintEpochsError(network.errs, path+".EpochStats");
         }
 
         public static MatrixNN ImportNN(string path)
