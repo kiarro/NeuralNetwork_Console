@@ -4,12 +4,12 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MatrixNeuralNetwok;
-using MatrixNeuralNetwok.FileStorage;
-using MatrixNeuralNetwok.Function;
+using MatrixNeuralNetwork;
+using MatrixNeuralNetwork.FileStorage;
+using NeuralNetwork_Console.Function;
 
 namespace NeuralNetwork_Console.Models {
-    public class MathModel {
+    public class Model {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public readonly Dictionary<string, MatrixNN> Networks = new Dictionary<string, MatrixNN>();

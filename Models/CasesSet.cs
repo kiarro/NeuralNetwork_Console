@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MatrixNeuralNetwok
+namespace MatrixNeuralNetwork
 {
     public class CasesSet : IEnumerable<KeyValuePair<double[], double[]>>
     {

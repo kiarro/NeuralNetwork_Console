@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using MatrixNeuralNetwork;
 
-namespace MatrixNeuralNetwok.Function {
+namespace NeuralNetwork_Console.Function {
     public static class FunctionPart {
         private static Random rand = new Random(1);
 

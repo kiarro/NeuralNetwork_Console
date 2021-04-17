@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MathNet.Numerics.LinearAlgebra;
 
-namespace MatrixNeuralNetwok.FileStorage
+namespace MatrixNeuralNetwork.FileStorage
 {
     class ImportExport
     {

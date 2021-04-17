@@ -12,14 +12,14 @@ using NLog;
 
 namespace NeuralNetwork_Console.Interface {
     public class MainInterface {
-        private MathModel _model;
+        private Model _model;
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public MainInterface() {
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
             Logger.Info("Start");
-            _model = new MathModel();
+            _model = new Model();
             MainLoop();
             Console.WriteLine("Interface exit");
             Logger.Info("Exit");
