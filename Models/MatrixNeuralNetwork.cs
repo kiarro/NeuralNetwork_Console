@@ -14,13 +14,12 @@ namespace MatrixNeuralNetwork {
                     str.AppendFormat("{0},", layerc);
                 }
                 str.Remove(str.Length - 1, 1);
-                str.Append("}\n");
+                str.Append("}");
                 return str.ToString();
             }
         }
         public int LayerAmount { get; private set; }
         public int[] NetStr { get; private set; }
-        // public Vector<double>[] Neurons { get; }
         private Vector<double>[] dNeurons { get; set; }
         public Matrix<double>[] Weights { get; set; }
         private Matrix<double>[] dWeights { get; set; }
@@ -39,27 +38,22 @@ namespace MatrixNeuralNetwork {
         public MatrixNN(int[] NNstructure) {
             NetStr = NNstructure;
             LayerAmount = NNstructure.Length;
-            // Neurons = new Vector<double>[LayerAmount];
             dNeurons = new Vector<double>[LayerAmount];
             Shift = new Vector<double>[LayerAmount];
             dShift = new Vector<double>[LayerAmount];
             Weights = new Matrix<double>[LayerAmount - 1];
             dWeights = new Matrix<double>[LayerAmount - 1];
             for (int i = 0; i < LayerAmount - 1; i++) {
-                // Neurons[i] = Vector<double>.Build.Dense(NNstructure[i], 0);
                 dNeurons[i] = Vector<double>.Build.Dense(NNstructure[i], 0);
                 Weights[i] = Matrix<double>.Build.Random(NNstructure[i + 1], NNstructure[i]);
-                // Weights[i] = Matrix<double>.Build.Dense(NNstructure[i+1], NNstructure[i], 0.1);
                 dWeights[i] = Matrix<double>.Build.Dense(NNstructure[i + 1], NNstructure[i], 0);
                 Shift[i] = Vector<double>.Build.Random(NNstructure[i + 1], NNstructure[i]);
                 dShift[i] = Vector<double>.Build.Dense(NNstructure[i + 1], 0);
             }
-            // Neurons[LayerAmount - 1] = Vector<double>.Build.Dense(NNstructure[LayerAmount - 1], 0);
         }
 
         public MatrixNN(int[] NNstructure, double? value) {
             LayerAmount = NNstructure.Length;
-            // Neurons = new Vector<double>[LayerAmount];
             dNeurons = new Vector<double>[LayerAmount];
             Shift = new Vector<double>[LayerAmount];
             dShift = new Vector<double>[LayerAmount];
@@ -67,12 +61,10 @@ namespace MatrixNeuralNetwork {
             dWeights = new Matrix<double>[LayerAmount - 1];
 
             for (int i = 0; i < LayerAmount - 1; i++) {
-                // Neurons[i] = Vector<double>.Build.Dense(NNstructure[i], 0);
                 dNeurons[i] = Vector<double>.Build.Dense(NNstructure[i], 0);
                 dWeights[i] = Matrix<double>.Build.Dense(NNstructure[i + 1], NNstructure[i], 0);
                 dShift[i] = Vector<double>.Build.Dense(NNstructure[i + 1], 0);
             }
-            // Neurons[LayerAmount - 1] = Vector<double>.Build.Dense(NNstructure[LayerAmount - 1], 0);
 
             if (value is not null) {
                 for (int i = 0; i < LayerAmount - 1; i++) {
@@ -84,13 +76,9 @@ namespace MatrixNeuralNetwork {
 
         private double ActivationFunction(double value) {
             return 1 / (1 + Math.Exp(-value));
-            // return Math.Sin(value);
-            // return value;
         }
         private double ActFuncDiff(double power) {
             return power * (1 - power);
-            // return Math.Sqrt(1-power*power);
-            // return 1;
         }
 
         private Vector<double>[] ForwardPass(double[] inputs) {

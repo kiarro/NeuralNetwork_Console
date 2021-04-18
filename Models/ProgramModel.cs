@@ -55,7 +55,7 @@ namespace NeuralNetwork_Console.Models {
                 Logger.Warn("Network with that name does not exists.");
             }
         }
-        public TrainTask TrainNet(string netN, string casesN, int era = 10000, int batchSize = 1000, double eduSpeed = 0.3, string resNetName = null) {
+        public TrainTask TrainNet(string netN, string casesN, int era = 100, int batchSize = 100, double eduSpeed = 0.3, string resNetName = null) {
             MatrixNN net;
             bool exN = Networks.TryGetValue(netN, out net);
             CasesSet cases;

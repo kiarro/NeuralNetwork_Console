@@ -76,6 +76,10 @@ namespace NeuralNetwork_Console.Interface {
                     case "copy":
                         _model.CopyNet(parts[2], parts[3]);
                         break;
+                    default:
+                        Console.WriteLine("Unknown command");
+                        Logger.Warn("Unknown command");
+                        break;
                     }
                     break;
                 case "case":
@@ -104,6 +108,10 @@ namespace NeuralNetwork_Console.Interface {
                         break;
                     case "export":
                         _model.ExportCasesSet(parts[2], parts[3]);
+                        break;
+                    default:
+                        Console.WriteLine("Unknown command");
+                        Logger.Warn("Unknown command");
                         break;
                     }
                     break;
@@ -191,7 +199,11 @@ namespace NeuralNetwork_Console.Interface {
                     break;
                 case "graphnet":
                     _model.GraphNet(parts[1], parts[2], parts[3]);
-                break;
+                    break;
+                default:
+                    Console.WriteLine("Unknown command");
+                    Logger.Warn("Unknown command");
+                    break;
                 }
             } catch (FileNotFoundException e) {
                 Console.WriteLine("File not found: \"{0}\"", command);
@@ -223,17 +235,18 @@ namespace NeuralNetwork_Console.Interface {
             Console.SetCursorPosition(0, Console.CursorTop - 1);
             Console.WriteLine("");
             Console.SetCursorPosition(0, Console.CursorTop - 1);
-            Console.WriteLine("Era {0} / {1} - Element {2} / {3}", ((TrainTask)tt).Era, ((TrainTask)tt).EraCount, ((TrainTask)tt).Element, ((TrainTask)tt).ElementCount);
+            int len1 = ((TrainTask)tt).EraCount.ToString().Length;
+            string l1 = "{0, " + len1 + "}";
+            int len2 = ((TrainTask)tt).EraCount.ToString().Length;
+            string l2 = "{0, " + len2 + "}";
+            Console.WriteLine("Era {0} / {1} - Element {2} / {3}", String.Format(l1, ((TrainTask)tt).Era), ((TrainTask)tt).EraCount, String.Format(l2, ((TrainTask)tt).Element), ((TrainTask)tt).ElementCount);
         }
     }
 
-    public static class Ext
-    {
-        public static string ToStr(this double[] arr)
-        {
+    public static class Ext {
+        public static string ToStr(this double[] arr) {
             StringBuilder res = new StringBuilder("{");
-            foreach (double v in arr)
-            {
+            foreach (double v in arr) {
                 res.Append(v);
                 res.Append(" ");
             }
