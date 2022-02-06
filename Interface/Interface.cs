@@ -48,6 +48,8 @@ namespace NeuralNetwork_Console.Interface
 
                 cmd.Command("new", (cmdn) =>
                 {
+                    cmdn.HelpOption("-h|--help");
+
                     cmdn.Description = "Create new feedforward neural network";
 
                     var nameOption = cmdn.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
@@ -63,6 +65,7 @@ namespace NeuralNetwork_Console.Interface
                 cmd.Command("ls", (cmdn) =>
                 {
                     cmdn.Description = "Show list of all networks";
+                    
                     cmdn.OnExecute(() =>
                     {
                         Console.WriteLine("{0, 15} {1, 40}", "name", "structure");
@@ -76,6 +79,8 @@ namespace NeuralNetwork_Console.Interface
 
                 cmd.Command("rm", (cmdn) =>
                 {
+                    cmdn.HelpOption("-h|--help");
+
                     cmdn.Description = "Remove network by name";
 
                     var nameOption = cmdn.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
@@ -89,6 +94,8 @@ namespace NeuralNetwork_Console.Interface
 
                 cmd.Command("import", (cmdn) =>
                 {
+                    cmdn.HelpOption("-h|--help");
+
                     cmdn.Description = "Import network from file";
 
                     var nameOption = cmdn.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
@@ -103,6 +110,8 @@ namespace NeuralNetwork_Console.Interface
 
                 cmd.Command("export", (cmdn) =>
                 {
+                    cmdn.HelpOption("-h|--help");
+
                     cmdn.Description = "Export network to file";
 
                     var nameOption = cmdn.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
@@ -117,6 +126,8 @@ namespace NeuralNetwork_Console.Interface
 
                 cmd.Command("clone", (cmdn) =>
                 {
+                    cmdn.HelpOption("-h|--help");
+
                     cmdn.Description = "Clone network";
 
                     var originOption = cmdn.Option("-o|--origin", "Original network name", CommandOptionType.SingleValue).IsRequired();
@@ -144,6 +155,8 @@ namespace NeuralNetwork_Console.Interface
 
                 cmd.Command("create-test-cases", (cmdn) =>
                 {
+                    cmdn.HelpOption("-h|--help");
+
                     cmdn.Description = "Create new cases for network with 2 input and 3 output.\nCases represent truth table for AND, OR and XOR operators";
 
                     var nameOption = cmdn.Option("-n|--name", "Cases name", CommandOptionType.SingleValue).IsRequired();
@@ -173,6 +186,8 @@ namespace NeuralNetwork_Console.Interface
 
                 cmd.Command("rm", (cmdn) =>
                 {
+                    cmdn.HelpOption("-h|--help");
+
                     cmdn.Description = "Remove case set";
 
                     var nameOption = cmdn.Option("-n|--name", "Cases name", CommandOptionType.SingleValue).IsRequired();
@@ -186,6 +201,8 @@ namespace NeuralNetwork_Console.Interface
 
                 cmd.Command("import", (cmdn) =>
                 {
+                    cmdn.HelpOption("-h|--help");
+
                     cmdn.Description = "Import cases from file";
 
                     var nameOption = cmdn.Option("-n|--name", "Cases name", CommandOptionType.SingleValue).IsRequired();
@@ -200,6 +217,8 @@ namespace NeuralNetwork_Console.Interface
 
                 cmd.Command("export", (cmdn) =>
                 {
+                    cmdn.HelpOption("-h|--help");
+
                     cmdn.Description = "Export Cases to file";
 
                     var nameOption = cmdn.Option("-n|--name", "Cases name", CommandOptionType.SingleValue).IsRequired();
@@ -221,6 +240,8 @@ namespace NeuralNetwork_Console.Interface
 
             processor.Command("train", (cmd) =>
             {
+                cmd.HelpOption("-h|--help");
+
                 cmd.Description = "Train network";
 
                 var nameOption = cmd.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
@@ -250,6 +271,8 @@ namespace NeuralNetwork_Console.Interface
 
             processor.Command("eval", (cmd) =>
             {
+                cmd.HelpOption("-h|--help");
+
                 cmd.Description = "Evaluate network with inputs";
 
                 var nameOption = cmd.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
@@ -268,6 +291,8 @@ namespace NeuralNetwork_Console.Interface
 
             processor.Command("eval-cases", (cmd) =>
             {
+                cmd.HelpOption("-h|--help");
+
                 cmd.Description = "Evaluate network with inputs";
 
                 var nameOption = cmd.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
@@ -284,6 +309,8 @@ namespace NeuralNetwork_Console.Interface
 
             processor.Command("testcase", (cmd) =>
             {
+                cmd.HelpOption("-h|--help");
+
                 cmd.Description = "Test network with one test case";
 
                 var nameOption = cmd.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
@@ -306,11 +333,13 @@ namespace NeuralNetwork_Console.Interface
 
             processor.Command("test", (cmd) =>
             {
+                cmd.HelpOption("-h|--help");
+
                 cmd.Description = "Test network with cases";
 
                 var nameOption = cmd.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
                 var casesOption = cmd.Option("-c|--cases", "Cases name", CommandOptionType.SingleValue).IsRequired();
-                
+
                 cmd.OnExecute(() =>
                 {
                     double err = _model.TestNet(nameOption.Value(), casesOption.Value());
@@ -322,6 +351,7 @@ namespace NeuralNetwork_Console.Interface
             processor.Command("exit", (cmd) =>
             {
                 cmd.Description = "Exit app";
+                
                 cmd.OnExecute(() =>
                 {
                     _logger.Info("Exit CLI");
@@ -332,6 +362,7 @@ namespace NeuralNetwork_Console.Interface
             processor.Command("help", (cmd) =>
             {
                 cmd.Description = "Print help message";
+                
                 cmd.OnExecute(() =>
                 {
                     processor.ShowHelp();
@@ -343,9 +374,18 @@ namespace NeuralNetwork_Console.Interface
         {
             _logger.Info(">> {0}", command);
 
-            int a = processor.Execute(command.Split(@"\s+"));
-            
-            return a;
+            try
+            {
+                int a = processor.Execute(command.Split(' '));
+
+                return a;
+            }
+            catch (UnrecognizedCommandParsingException e)
+            {
+                _logger.Error(e);
+                Console.WriteLine("Unknown command");
+                return 0;
+            }
         }
 
         private void ExecuteFile(string path)
