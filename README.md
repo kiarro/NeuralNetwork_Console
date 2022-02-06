@@ -1,4 +1,19 @@
 # NeuralNetwork_Console
 
-$$E(O, O_{ideal})={ \lVert O-O_{ideal} \lVert }^2 $$
-$$E = 1/{n} \sum_I { \lVert O(I)-O_{ideal}(I) \lVert }^2$$
+Simple feedforward neural network realization using matrices.
+
+Inputs and outputs might be only `double`.
+
+Program has CLI.
+
+All networks and datasets stores in memory.
+
+## Functions
+
+Program allows to
+
+- Create new feedforward neural networks with different structures
+- Train networks
+- Evaluate networks with input
+- Test networks (find errors)
+- Import and Export networks and cases in text format
