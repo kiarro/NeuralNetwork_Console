@@ -7,223 +7,358 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using McMaster.Extensions.CommandLineUtils;
 using NeuralNetwork_Console.Models;
 using NLog;
 
-namespace NeuralNetwork_Console.Interface {
-    public class MainInterface {
+namespace NeuralNetwork_Console.Interface
+{
+    public class Handler
+    {
         private Model _model;
+        private static readonly NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
+        private CommandLineApplication<Handler> processor;
 
-        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-
-        public MainInterface() {
+        public Handler()
+        {
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-            Logger.Info("Start");
             _model = new Model();
-            MainLoop();
-            Console.WriteLine("Interface exit");
-            Logger.Info("Exit");
+            processor = new CommandLineApplication<Handler>();
 
-        }
+            processor.Command("exec", (cmd) =>
+            {
+                cmd.Description = "Execute commands from file";
+                var file = cmd.Argument("[file]", "File name").IsRequired();
 
-        private void MainLoop() {
-            Console.WriteLine("Process started");
-            int result = 1;
-            while (result > -1) {
-                Console.Write(">> ");
-                Task<string> w = Task.Run(() => Console.ReadLine());
-                w.Wait();
-                string command = w.Result;
-                Logger.Info(">> {0}", command);
-                command = command.ToLower();
-                result = ProcessCommand(command);
-            }
-            return;
-        }
+                cmd.HelpOption("-h|--help");
 
-        private int ProcessCommand(string command) {
-            try {
-                // string[] parts = command.Split(' ');
-                string[] parts = Regex.Matches(command, @"(\S+)").Select(e => e.Groups[1].Value).ToArray();
-                switch (parts[0]) {
-                case "exit":
-                    return -1;
-                case "exec":
-                    ExecuteFile(parts[1]);
-                    Console.WriteLine("File executed");
-                    Logger.Info("File executed");
-                    break;
-                case "net":
-                    switch (parts[1]) {
-                    case "new":
-                        _model.CreateNewNet(parts[2], Regex.Matches(parts[3], @"(\d+)").Cast<Match>().Select(s => Int32.Parse(s.Value)).ToArray());
-                        break;
-                    case "ls":
+                cmd.OnExecute(() =>
+                {
+                    ExecuteFile(file.Value);
+                    _logger.Info("File executed");
+                    return 0;
+                });
+            });
+
+            processor.Command("net", (cmd) =>
+            {
+                cmd.Description = "Do something with nets";
+
+                cmd.HelpOption("-h|--help");
+
+                cmd.Command("new", (cmdn) =>
+                {
+                    cmdn.Description = "Create new feedforward neural network";
+
+                    var nameOption = cmdn.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
+                    var structureOption = cmdn.Option("-s", "Network structure as \'2;2;3;1\' without \'", CommandOptionType.SingleValue).IsRequired();
+
+                    cmdn.OnExecute(() =>
+                    {
+                        _model.CreateNewNet(nameOption.Value(), structureOption.Value().Split(";").Select(s => Int32.Parse(s)).ToArray());
+                        return 0;
+                    });
+                });
+
+                cmd.Command("ls", (cmdn) =>
+                {
+                    cmdn.Description = "Show list of all networks";
+                    cmdn.OnExecute(() =>
+                    {
                         Console.WriteLine("{0, 15} {1, 40}", "name", "structure");
-                        foreach (var n in _model.Networks) {
+                        foreach (var n in _model.Networks)
+                        {
                             Console.WriteLine("{0, 15} {1, 40}", n.Key, n.Value.Structure);
                         }
-                        break;
-                    case "rm":
-                        _model.RemoveNet(parts[2]);
-                        break;
-                    case "import":
-                        _model.ImportNet(parts[2], parts[3]);
-                        break;
-                    case "export":
-                        _model.ExportNet(parts[2], parts[3]);
-                        break;
-                    case "copy":
-                        _model.CopyNet(parts[2], parts[3]);
-                        break;
-                    default:
-                        Console.WriteLine("Unknown command");
-                        Logger.Warn("Unknown command");
-                        break;
-                    }
-                    break;
-                case "case":
-                    switch (parts[1]) {
-                    case "new":
-                        switch (parts[2]) {
-                        case "uniform":
-                            _model.CreateNewCasesSetUniform(parts[3], Int32.Parse(parts[4]), Double.Parse(parts[5], CultureInfo.InvariantCulture), Double.Parse(parts[6], CultureInfo.InvariantCulture), Int32.Parse(parts[7]), Double.Parse(parts[8]), Double.Parse(parts[9], CultureInfo.InvariantCulture));
-                            break;
-                        case "random":
-                            _model.CreateNewCasesSetRandom(parts[3], Int32.Parse(parts[4]), Double.Parse(parts[5], CultureInfo.InvariantCulture), Double.Parse(parts[6], CultureInfo.InvariantCulture), Double.Parse(parts[7], CultureInfo.InvariantCulture), Double.Parse(parts[8], CultureInfo.InvariantCulture));
-                            break;
-                        }
-                        break;
-                    case "ls":
+                        return 0;
+                    });
+                });
+
+                cmd.Command("rm", (cmdn) =>
+                {
+                    cmdn.Description = "Remove network by name";
+
+                    var nameOption = cmdn.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
+
+                    cmdn.OnExecute(() =>
+                    {
+                        _model.RemoveNet(nameOption.Value());
+                        return 0;
+                    });
+                });
+
+                cmd.Command("import", (cmdn) =>
+                {
+                    cmdn.Description = "Import network from file";
+
+                    var nameOption = cmdn.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
+                    var fileOption = cmdn.Option("-f|--file", "Path to file", CommandOptionType.SingleValue).IsRequired();
+
+                    cmdn.OnExecute(() =>
+                    {
+                        _model.ImportNet(nameOption.Value(), fileOption.Value());
+                        return 0;
+                    });
+                });
+
+                cmd.Command("export", (cmdn) =>
+                {
+                    cmdn.Description = "Export network to file";
+
+                    var nameOption = cmdn.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
+                    var fileOption = cmdn.Option("-f|--file", "Path to file", CommandOptionType.SingleValue).IsRequired();
+
+                    cmdn.OnExecute(() =>
+                    {
+                        _model.ExportNet(nameOption.Value(), fileOption.Value());
+                        return 0;
+                    });
+                });
+
+                cmd.Command("clone", (cmdn) =>
+                {
+                    cmdn.Description = "Clone network";
+
+                    var originOption = cmdn.Option("-o|--origin", "Original network name", CommandOptionType.SingleValue).IsRequired();
+                    var newOption = cmdn.Option("-n|--new", "New network name", CommandOptionType.SingleValue).IsRequired();
+
+                    cmdn.OnExecute(() =>
+                    {
+                        _model.CopyNet(originOption.Value(), newOption.Value());
+                        return 0;
+                    });
+                });
+
+                cmd.OnExecute(() =>
+                {
+                    _logger.Info("Please specify command");
+                    return 0;
+                });
+            });
+
+            processor.Command("case", (cmd) =>
+            {
+                cmd.Description = "Do something with cases";
+
+                cmd.HelpOption("-h|--help");
+
+                cmd.Command("create-test-cases", (cmdn) =>
+                {
+                    cmdn.Description = "Create new cases for network with 2 input and 3 output.\nCases represent truth table for AND, OR and XOR operators";
+
+                    var nameOption = cmdn.Option("-n|--name", "Cases name", CommandOptionType.SingleValue).IsRequired();
+
+                    cmdn.OnExecute(() =>
+                    {
+                        _model.CreateTestCases(nameOption.Value());
+                        _logger.Info("Test cases created");
+                        return 0;
+                    });
+                });
+
+                cmd.Command("ls", (cmdn) =>
+                {
+                    cmdn.Description = "Show list of all case sets (cases)";
+
+                    cmdn.OnExecute(() =>
+                    {
                         Console.WriteLine("{0, 15} {1, 40}", "name", "count");
-                        foreach (var n in _model.CasesSets) {
+                        foreach (var n in _model.CasesSets)
+                        {
                             Console.WriteLine("{0, 15} {1, 40}", n.Key, n.Value.Count);
                         }
-                        break;
-                    case "rm":
-                        _model.RemoveCasesSet(parts[2]);
-                        break;
-                    case "import":
-                        _model.ImportCasesSet(parts[2], parts[3]);
-                        break;
-                    case "export":
-                        _model.ExportCasesSet(parts[2], parts[3]);
-                        break;
-                    default:
-                        Console.WriteLine("Unknown command");
-                        Logger.Warn("Unknown command");
-                        break;
-                    }
-                    break;
-                case "train":
-                    Console.WriteLine("");
-                    if (parts.Length == 3) {
-                        var watch = System.Diagnostics.Stopwatch.StartNew();
-                        // net, case
-                        TrainTask _tt = _model.TrainNet(parts[1], parts[2]);
-                        Timer timer = new Timer(callbackWriteConsole, _tt, 0, 2000);
-                        Task.Delay(20);
-                        _tt.CurrentTask.Wait();
-                        timer.Change(-1, -1);
-                        watch.Stop();
-                        timer.Dispose();
-                        Console.WriteLine("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
-                        Logger.Info("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
                         return 0;
-                    }
-                    if (parts.Length == 4) {
-                        var watch = System.Diagnostics.Stopwatch.StartNew();
-                        // net, case
-                        TrainTask _tt = _model.TrainNet(parts[1], parts[2], resNetName : parts[3]);
-                        Timer timer = new Timer(callbackWriteConsole, _tt, 1000, 2000);
-                        _tt.CurrentTask.Wait();
-                        timer.Change(-1, -1);
-                        watch.Stop();
-                        timer.Dispose();
-                        Console.WriteLine("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
-                        Logger.Info("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
+                    });
+                });
+
+                cmd.Command("rm", (cmdn) =>
+                {
+                    cmdn.Description = "Remove case set";
+
+                    var nameOption = cmdn.Option("-n|--name", "Cases name", CommandOptionType.SingleValue).IsRequired();
+
+                    cmdn.OnExecute(() =>
+                    {
+                        _model.RemoveCasesSet(nameOption.Value());
                         return 0;
-                    }
-                    if (parts.Length == 6) {
-                        var watch = System.Diagnostics.Stopwatch.StartNew();
-                        // net, case, epochs, batch, speed
-                        TrainTask _tt = _model.TrainNet(parts[1], parts[2], Int32.Parse(parts[3]), Int32.Parse(parts[4]), Double.Parse(parts[5], CultureInfo.InvariantCulture));
-                        Timer timer = new Timer(callbackWriteConsole, _tt, 1000, 2000);
-                        _tt.CurrentTask.Wait();
-                        timer.Change(-1, -1);
-                        watch.Stop();
-                        timer.Dispose();
-                        Console.WriteLine("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
-                        Logger.Info("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
+                    });
+                });
+
+                cmd.Command("import", (cmdn) =>
+                {
+                    cmdn.Description = "Import cases from file";
+
+                    var nameOption = cmdn.Option("-n|--name", "Cases name", CommandOptionType.SingleValue).IsRequired();
+                    var fileOption = cmdn.Option("-f|--file", "Path to file", CommandOptionType.SingleValue).IsRequired();
+
+                    cmdn.OnExecute(() =>
+                    {
+                        _model.ImportCasesSet(nameOption.Value(), fileOption.Value());
                         return 0;
-                    }
-                    if (parts.Length == 7) {
-                        var watch = System.Diagnostics.Stopwatch.StartNew();
-                        // net, case, edu, batch, speed
-                        TrainTask _tt = _model.TrainNet(parts[1], parts[2], Int32.Parse(parts[4]), Int32.Parse(parts[5]), Double.Parse(parts[6], CultureInfo.InvariantCulture), resNetName : parts[3]);
-                        Timer timer = new Timer(callbackWriteConsole, _tt, 1000, 2000);
-                        _tt.CurrentTask.Wait();
-                        timer.Change(-1, -1);
-                        watch.Stop();
-                        timer.Dispose();
-                        Console.WriteLine("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
-                        Logger.Info("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
+                    });
+                });
+
+                cmd.Command("export", (cmdn) =>
+                {
+                    cmdn.Description = "Export Cases to file";
+
+                    var nameOption = cmdn.Option("-n|--name", "Cases name", CommandOptionType.SingleValue).IsRequired();
+                    var fileOption = cmdn.Option("-f|--file", "Path to file", CommandOptionType.SingleValue).IsRequired();
+
+                    cmdn.OnExecute(() =>
+                    {
+                        _model.ExportCasesSet(nameOption.Value(), fileOption.Value());
                         return 0;
-                    }
-                    break;
-                case "eval":
-                    Match m = Regex.Match(command, @"{((?:[\d\,\.\-]+\s?)+)}");
-                    double[] input1 = m.Groups[1].Value.Split(' ')
+                    });
+                });
+
+                cmd.OnExecute(() =>
+                {
+                    _logger.Info("Please specify command");
+                    return 0;
+                });
+            });
+
+            processor.Command("train", (cmd) =>
+            {
+                cmd.Description = "Train network";
+
+                var nameOption = cmd.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
+                var caseOption = cmd.Option("-c|--case", "Cases name", CommandOptionType.SingleValue).IsRequired();
+                var eraOption = cmd.Option<int>("-e|--era", "Era count (default: 100)", CommandOptionType.SingleValue);
+                eraOption.DefaultValue = 100;
+                var batchOption = cmd.Option<int>("-b|--batch", "Batch size (default: 100)", CommandOptionType.SingleValue);
+                batchOption.DefaultValue = 100;
+                var speedOption = cmd.Option<double>("-s|--speed", "Education speed parameter (default: 0.3)", CommandOptionType.SingleValue);
+                speedOption.DefaultValue = 0.3;
+                var newNameOption = cmd.Option("--new-name", "If specified then trained network will save as new one", CommandOptionType.SingleValue);
+
+                cmd.OnExecute(() =>
+                {
+                    var watch = System.Diagnostics.Stopwatch.StartNew();
+                    TrainTask _tt = _model.TrainNet(nameOption.Value(), caseOption.Value(), eraOption.ParsedValue, batchOption.ParsedValue, speedOption.ParsedValue, newNameOption.Value());
+                    Timer timer = new Timer(callbackWriteConsole, _tt, 0, 2000);
+                    _tt.CurrentTask.Wait();
+                    timer.Change(-1, -1);
+                    watch.Stop();
+                    timer.Dispose();
+                    Console.WriteLine("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
+                    _logger.Info("Trained: {0} seconds", watch.ElapsedMilliseconds / 1000);
+                    return 0;
+                });
+            });
+
+            processor.Command("eval", (cmd) =>
+            {
+                cmd.Description = "Evaluate network with inputs";
+
+                var nameOption = cmd.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
+                var inputsOption = cmd.Option("-i|--input", "Input values like \'0.1;2;5\' without \'", CommandOptionType.SingleValue).IsRequired();
+
+                cmd.OnExecute(() =>
+                {
+                    double[] input = inputsOption.Value().Split(';')
                         .Select(s => Double.Parse(s, CultureInfo.InvariantCulture))
                         .ToArray();
-                    double[] out1 = _model.EvalValue(parts[1], input1);
-                    Console.WriteLine("Evaluated. Result : {0}", out1.ToStr());
-                    Logger.Info("Evaluated. Result : {0}", out1.ToStr());
-                    break;
-                case "testcase":
-                    Match m1 = Regex.Match(command, @"{((?:[\d\,\.\-]+\s?)+)} => {((?:[\d\,\.\-]+\s?)+)}");
-                    double[] input = m1.Groups[1].Value.Split(' ')
+                    double[] output = _model.EvalValue(nameOption.Value(), input);
+                    Console.WriteLine("Evaluated. Result : {0}", output.ToStr());
+                    return 0;
+                });
+            });
+
+            processor.Command("eval-cases", (cmd) =>
+            {
+                cmd.Description = "Evaluate network with inputs";
+
+                var nameOption = cmd.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
+                var inputsOption = cmd.Option("-c|--cases", "Cases name", CommandOptionType.SingleValue).IsRequired();
+                var resultOption = cmd.Option("-r|--result", "File name for results", CommandOptionType.SingleValue).IsRequired();
+
+                cmd.OnExecute(() =>
+                {
+                    _model.EvalToFileNet(nameOption.Value(), inputsOption.Value(), resultOption.Value());
+                    Console.WriteLine("Evaluated");
+                    return 0;
+                });
+            });
+
+            processor.Command("testcase", (cmd) =>
+            {
+                cmd.Description = "Test network with one test case";
+
+                var nameOption = cmd.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
+                var inputsOption = cmd.Option("-i|--input", "Input values like \'0.1;2;5\' without \'", CommandOptionType.SingleValue).IsRequired();
+                var outputsOption = cmd.Option("-o|--output", "Output values like \'0.1;2;5\' without \'", CommandOptionType.SingleValue).IsRequired();
+
+                cmd.OnExecute(() =>
+                {
+                    double[] input = inputsOption.Value().Split(';')
                         .Select(s => Double.Parse(s, CultureInfo.InvariantCulture))
                         .ToArray();
-                    double[] output = m1.Groups[2].Value.Split(' ')
+                    double[] output = outputsOption.Value().Split(';')
                         .Select(s => Double.Parse(s, CultureInfo.InvariantCulture))
                         .ToArray();
-                    double err1 = _model.TestNet(parts[1], input, output);
-                    Console.WriteLine("Tested. Error : {0}", err1);
-                    Logger.Info("Tested. Error : {0}", err1);
-                    break;
-                case "test":
-                    double err = _model.TestNet(parts[1], parts[2]);
+                    double err = _model.TestNet(nameOption.Value(), input, output);
                     Console.WriteLine("Tested. Error : {0}", err);
-                    Logger.Info("Tested. Error : {0}", err);
-                    break;
-                case "graphnet":
-                    _model.GraphNet(parts[1], parts[2], parts[3]);
-                    break;
-                default:
-                    Console.WriteLine("Unknown command");
-                    Logger.Warn("Unknown command");
-                    break;
-                }
-            } catch (FileNotFoundException e) {
-                Console.WriteLine("File not found: \"{0}\"", command);
-                Logger.Error(e, "File not found");
-            } catch (Exception e) {
-                Console.WriteLine("Some error in: \"{0}\"", command);
-                Logger.Error(e, "Some error");
-            }
-            return 0;
+                    return 0;
+                });
+            });
+
+            processor.Command("test", (cmd) =>
+            {
+                cmd.Description = "Test network with cases";
+
+                var nameOption = cmd.Option("-n|--name", "Network name", CommandOptionType.SingleValue).IsRequired();
+                var casesOption = cmd.Option("-c|--cases", "Cases name", CommandOptionType.SingleValue).IsRequired();
+                
+                cmd.OnExecute(() =>
+                {
+                    double err = _model.TestNet(nameOption.Value(), casesOption.Value());
+                    Console.WriteLine("Tested. Error : {0}", err);
+                    return 0;
+                });
+            });
+
+            processor.Command("exit", (cmd) =>
+            {
+                cmd.Description = "Exit app";
+                cmd.OnExecute(() =>
+                {
+                    _logger.Info("Exit CLI");
+                    return -1;
+                });
+            });
+
+            processor.Command("help", (cmd) =>
+            {
+                cmd.Description = "Print help message";
+                cmd.OnExecute(() =>
+                {
+                    processor.ShowHelp();
+                });
+            });
         }
 
-        private void ExecuteFile(string path) {
+        public int ProcessCommand(string command)
+        {
+            _logger.Info(">> {0}", command);
+
+            int a = processor.Execute(command.Split(@"\s+"));
+            
+            return a;
+        }
+
+        private void ExecuteFile(string path)
+        {
             FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read);
             StreamReader sr = new StreamReader(fs);
             string? line;
 
-            while (!sr.EndOfStream) {
+            while (!sr.EndOfStream)
+            {
                 line = sr.ReadLine();
                 Console.WriteLine("> " + line);
-                Logger.Info("> {0}", line);
+                _logger.Info("> {0}", line);
                 ProcessCommand(line);
             }
 
@@ -231,7 +366,8 @@ namespace NeuralNetwork_Console.Interface {
             fs.Close();
         }
 
-        private static void callbackWriteConsole(object tt) {
+        private static void callbackWriteConsole(object tt)
+        {
             Console.SetCursorPosition(0, Console.CursorTop - 1);
             Console.WriteLine("");
             Console.SetCursorPosition(0, Console.CursorTop - 1);
@@ -243,10 +379,13 @@ namespace NeuralNetwork_Console.Interface {
         }
     }
 
-    public static class Ext {
-        public static string ToStr(this double[] arr) {
+    public static class Ext
+    {
+        public static string ToStr(this double[] arr)
+        {
             StringBuilder res = new StringBuilder("{");
-            foreach (double v in arr) {
+            foreach (double v in arr)
+            {
                 res.Append(v);
                 res.Append(" ");
             }

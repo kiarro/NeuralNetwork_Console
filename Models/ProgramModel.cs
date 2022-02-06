@@ -6,74 +6,95 @@ using System.Text;
 using System.Threading.Tasks;
 using MatrixNeuralNetwork;
 using MatrixNeuralNetwork.FileStorage;
-using NeuralNetwork_Console.Function;
 
-namespace NeuralNetwork_Console.Models {
-    public class Model {
+namespace NeuralNetwork_Console.Models
+{
+    public class Model
+    {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
 
         public readonly Dictionary<string, MatrixNN> Networks = new Dictionary<string, MatrixNN>();
 
         public readonly Dictionary<string, CasesSet> CasesSets = new Dictionary<string, CasesSet>();
 
-        public void SetRandomSeed(int seed) {
-            FunctionPart.ResetRandom(seed);
-        }
-        public void CreateNewNet(string name, int[] str) {
-            if (Networks.ContainsKey(name)) {
+        public void CreateNewNet(string name, int[] str)
+        {
+            if (Networks.ContainsKey(name))
+            {
                 Console.WriteLine("Network with that name already exists.");
                 Logger.Warn("Network with that name already exists.");
-            } else {
+            }
+            else
+            {
                 Networks.Add(name, new MatrixNN(str));
             }
         }
-        public void ImportNet(string name, string path) {
-            if (Networks.ContainsKey(name)) {
+        public void ImportNet(string name, string path)
+        {
+            if (Networks.ContainsKey(name))
+            {
                 Console.WriteLine("Network with that name already exists.");
                 Logger.Warn("Network with that name already exists.");
-            } else {
+            }
+            else
+            {
                 Networks.Add(name, ImportExport.ImportNN(path));
             }
         }
-        public void ExportNet(string name, string path) {
+        public void ExportNet(string name, string path)
+        {
             MatrixNN net;
             bool ex = Networks.TryGetValue(name, out net);
-            if (ex) {
+            if (ex)
+            {
                 ImportExport.ExportNN(net, path);
-            } else {
+            }
+            else
+            {
                 Console.WriteLine("Network with that name does not exists.");
                 Logger.Warn("Network with that name does not exists.");
             }
         }
-        public void RemoveNet(string name) {
+        public void RemoveNet(string name)
+        {
             MatrixNN net;
             bool ex = Networks.TryGetValue(name, out net);
-            if (ex) {
+            if (ex)
+            {
                 Networks.Remove(name);
-            } else {
+            }
+            else
+            {
                 Console.WriteLine("Network with that name does not exists.");
                 Logger.Warn("Network with that name does not exists.");
             }
         }
-        public TrainTask TrainNet(string netN, string casesN, int era = 100, int batchSize = 100, double eduSpeed = 0.3, string resNetName = null) {
+        public TrainTask TrainNet(string netN, string casesN, int era = 100, int batchSize = 100, double eduSpeed = 0.3, string resNetName = null)
+        {
             MatrixNN net;
             bool exN = Networks.TryGetValue(netN, out net);
             CasesSet cases;
             bool exC = CasesSets.TryGetValue(casesN, out cases);
-            if (!exN) {
-                return new TrainTask(Task.Run(() => {
+            if (!exN)
+            {
+                return new TrainTask(Task.Run(() =>
+                {
                     Console.WriteLine("Network with that name does not exists.");
                     Logger.Warn("Network with that name does not exists.");
                 }), net);
             }
-            if (!exC) {
-                return new TrainTask(Task.Run(() => {
+            if (!exC)
+            {
+                return new TrainTask(Task.Run(() =>
+                {
                     Console.WriteLine("Cases set with that name does not exists.");
                     Logger.Warn("Cases set with that name does not exists.");
                 }), net);
             }
-            if (resNetName is not null) {
-                if (Networks.ContainsKey(resNetName))return new TrainTask(Task.Run(() => {
+            if (resNetName is not null)
+            {
+                if (Networks.ContainsKey(resNetName)) return new TrainTask(Task.Run(() =>
+                {
                     Console.WriteLine("Network with new name already exists.");
                     Logger.Warn("Network with new name already exists.");
                 }), net);
@@ -81,7 +102,8 @@ namespace NeuralNetwork_Console.Models {
                 Networks.Add(resNetName, net);
                 netN = resNetName;
             }
-            return new TrainTask(Task.Run(() => {
+            return new TrainTask(Task.Run(() =>
+            {
                 double[] err = net.TrainNet(cases, era, batchSize, eduSpeed);
                 // ImportExport.PrintEpochsError(err, String.Format("{0}.EpochStats", netN));
             }), net);
@@ -90,15 +112,17 @@ namespace NeuralNetwork_Console.Models {
         {
             MatrixNN net;
             bool exN = Networks.TryGetValue(netN, out net);
-            if (!exN) {
+            if (!exN)
+            {
                 Console.WriteLine("Network with that name does not exists.");
                 Logger.Warn("Network with that name does not exists.");
-                return new double[0]{};
+                return new double[0] { };
             }
-            if (net.NetStr[0] != input.Length) {
+            if (net.NetStr[0] != input.Length)
+            {
                 Console.WriteLine("Wrong count of inputs");
                 Logger.Warn("Wrong count of inputs");
-                return new double[0]{};
+                return new double[0] { };
             }
             double[] output = net.EvalValue(input);
             return output;
@@ -107,12 +131,14 @@ namespace NeuralNetwork_Console.Models {
         {
             MatrixNN net;
             bool exN = Networks.TryGetValue(netN, out net);
-            if (!exN) {
+            if (!exN)
+            {
                 Console.WriteLine("Network with that name does not exists.");
                 Logger.Warn("Network with that name does not exists.");
                 return 1000000;
             }
-            if (net.NetStr[0] != input.Length) {
+            if (net.NetStr[0] != input.Length)
+            {
                 Console.WriteLine("Wrong count of inputs");
                 Logger.Warn("Wrong count of inputs");
                 return 1000000;
@@ -120,107 +146,137 @@ namespace NeuralNetwork_Console.Models {
             double err = net.TestNet(input, output);
             return err;
         }
-        public double TestNet(string netN, string casesN) {
+        public double TestNet(string netN, string casesN)
+        {
             MatrixNN net;
             bool exN = Networks.TryGetValue(netN, out net);
             CasesSet cases;
             bool exC = CasesSets.TryGetValue(casesN, out cases);
-            if (!exN) {
+            if (!exN)
+            {
                 Console.WriteLine("Network with that name does not exists.");
                 Logger.Warn("Network with that name does not exists.");
                 return -1;
             }
-            if (!exC) {
+            if (!exC)
+            {
                 Console.WriteLine("Cases set with that name does not exists.");
                 Logger.Warn("Cases set with that name does not exists.");
                 return -1;
             }
             return net.TestNet(cases);
         }
-        public void GraphNet(string netN, string casesN, string path){
+        public void EvalToFileNet(string netN, string casesN, string path)
+        {
             MatrixNN net;
             bool exN = Networks.TryGetValue(netN, out net);
             CasesSet cases;
             bool exC = CasesSets.TryGetValue(casesN, out cases);
-            if (!exN) {
+            if (!exN)
+            {
                 Console.WriteLine("Network with that name does not exists.");
                 Logger.Warn("Network with that name does not exists.");
                 return;
             }
-            if (!exC) {
+            if (!exC)
+            {
                 Console.WriteLine("Cases set with that name does not exists.");
                 Logger.Warn("Cases set with that name does not exists.");
                 return;
             }
-            CasesSet res = net.GraphNet(cases);
+            CasesSet res = net.EvalSetNet(cases);
             ImportExport.ExportCasesSet(res, path);
         }
-        public void CreateNewCasesSetUniform(string name, int numX, double minX, double maxX, int numY, double minY, double maxY) {
-            if (CasesSets.ContainsKey(name)) {
+
+        public void CreateTestCases(string name)
+        {
+            if (CasesSets.ContainsKey(name))
+            {
                 Console.WriteLine("Cases set with that name already exists.");
                 Logger.Warn("Cases set with that name already exists.");
-            } else {
-                CasesSets.Add(name, FunctionPart.PrepareCasesUniform(numX, minX, maxX, numY, minY, maxY));
+            }
+            else
+            {
+                Dictionary<double[], double[]> res = new Dictionary<double[], double[]>();
+
+                res.Add(new double[] {0, 0}, new double[] {0, 0, 0});
+                res.Add(new double[] {0, 1}, new double[] {0, 1, 1});
+                res.Add(new double[] {1, 0}, new double[] {0, 1, 1});
+                res.Add(new double[] {1, 1}, new double[] {1, 1, 0});
+
+                CasesSets.Add(name, new CasesSet(res));
             }
         }
-        public void CreateNewCasesSetRandom(string name, int num, double minX, double maxX, double minY, double maxY) {
-            if (CasesSets.ContainsKey(name)) {
+        public void ImportCasesSet(string name, string path)
+        {
+            if (CasesSets.ContainsKey(name))
+            {
                 Console.WriteLine("Cases set with that name already exists.");
                 Logger.Warn("Cases set with that name already exists.");
-            } else {
-                CasesSets.Add(name, FunctionPart.PrepareCasesRandom(num, minX, maxX, minY, maxY));
             }
-        }
-        public void ImportCasesSet(string name, string path) {
-            if (CasesSets.ContainsKey(name)) {
-                Console.WriteLine("Cases set with that name already exists.");
-                Logger.Warn("Cases set with that name already exists.");
-            } else {
+            else
+            {
                 CasesSets.Add(name, ImportExport.ImportCasesSet(path));
             }
         }
-        public void ExportCasesSet(string name, string path) {
+        public void ExportCasesSet(string name, string path)
+        {
             CasesSet cs;
             bool ex = CasesSets.TryGetValue(name, out cs);
-            if (CasesSets.ContainsKey(name)) {
+            if (CasesSets.ContainsKey(name))
+            {
                 ImportExport.ExportCasesSet(cs, path);
-            } else {
+            }
+            else
+            {
                 Console.WriteLine("Cases set with that name does not exists.");
                 Logger.Warn("Cases set with that name does not exists.");
             }
         }
-        public void RemoveCasesSet(string name) {
-            if (CasesSets.ContainsKey(name)) {
+        public void RemoveCasesSet(string name)
+        {
+            if (CasesSets.ContainsKey(name))
+            {
                 CasesSets.Remove(name);
-            } else {
+            }
+            else
+            {
                 Console.WriteLine("Cases set with that name does not exists.");
                 Logger.Warn("Cases set with that name does not exists.");
             }
         }
-        public void CopyNet(string name1, string name2) {
+        public void CopyNet(string name1, string name2)
+        {
             MatrixNN net;
             bool exN = Networks.TryGetValue(name1, out net);
-            if (Networks.ContainsKey(name2)) {
+            if (Networks.ContainsKey(name2))
+            {
                 Console.WriteLine("Network with that name already exists.");
                 Logger.Warn("Network with that name already exists.");
-            } else if (!exN) {
+            }
+            else if (!exN)
+            {
                 Console.WriteLine("Network with that name does not exists.");
                 Logger.Warn("Network with that name does not exists.");
-            } else {
+            }
+            else
+            {
                 net = net.Copy();
                 Networks.Add(name2, net);
             }
         }
     }
 
-    public class TrainTask {
+    public class TrainTask
+    {
         public Task CurrentTask { get; }
         MatrixNN Network { get; }
         public int Era { get => Network.CurrentEra; }
         public int Element { get => Network.CurrentElement; }
         public int EraCount { get => Network.CountEra; }
         public int ElementCount { get => Network.CountElement; }
-        public TrainTask(Task task, MatrixNN net) {
+        public TrainTask(Task task, MatrixNN net)
+        {
             CurrentTask = task;
             Network = net;
         }

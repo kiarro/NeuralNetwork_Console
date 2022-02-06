@@ -77,9 +77,6 @@ namespace MatrixNeuralNetwork {
         private double ActivationFunction(double value) {
             return 1 / (1 + Math.Exp(-value));
         }
-        private double ActFuncDiff(double power) {
-            return power * (1 - power);
-        }
 
         private Vector<double>[] ForwardPass(double[] inputs) {
             Vector<double>[] Neurons = new Vector<double>[LayerAmount];
@@ -177,20 +174,30 @@ namespace MatrixNeuralNetwork {
             }
             return error;
         }
-        public CasesSet GraphNet(CasesSet input){
+        /// <summary>
+        /// Evaluate for each case from set
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public CasesSet EvalSetNet(CasesSet input){
             CasesSet result = new CasesSet();
             double[] output;
             foreach (var item in input) {
-                output = ForwardPass(item.Key)[LayerAmount - 1].ToArray();
+                output = EvalValue(item.Key);
                 result.Add(item.Key, output);                
             }
             return result;
         }
-        public CasesSet GraphNet(List<double[]> input){
+        /// <summary>
+        /// Evaluate for each input
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public CasesSet EvalSetNet(List<double[]> input){
             CasesSet result = new CasesSet();
             double[] output;
             foreach (var item in input) {
-                output = ForwardPass(item)[LayerAmount - 1].ToArray();
+                output = EvalValue(item);
                 result.Add(item, output);                
             }
             return result;
